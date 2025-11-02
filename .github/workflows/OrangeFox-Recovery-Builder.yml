@@ -134,11 +134,11 @@ jobs:
         echo "DEVICE_TREE_URL=${DEVICE_TREE_URL}" >> $GITHUB_ENV
 
     - name: Check if Recovery Exist
-  run: |
-    cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+    run: |
+      cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
     
     # Сначала проверяем существование директории
-    if [ ! -d "out/target/product/${{ github.event.inputs.DEVICE_NAME }}" ]; then
+      if [ ! -d "out/target/product/${{ github.event.inputs.DEVICE_NAME }}" ]; then
       echo "ERROR: Build directory doesn't exist - build likely failed"
       exit 1
     fi
