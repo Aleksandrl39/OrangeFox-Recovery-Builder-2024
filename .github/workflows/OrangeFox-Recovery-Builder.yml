@@ -178,6 +178,31 @@ jobs:
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
 
+        cat > omni_X663.mk << 'EOF'
+         PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_X663.mk
+         $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
+         $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
+         $(call inherit-product, vendor/orangefox/config/common.mk)
+         $(call inherit-product, device/infinix/Infinix-X663/device.mk)
+         PRODUCT_DEVICE := X663
+         PRODUCT_NAME := omni_X663
+         PRODUCT_BRAND := Infinix
+         PRODUCT_MODEL := Infinix X663
+         PRODUCT_MANUFACTURER := infinix
+         PRODUCT_GMS_CLIENTID_BASE := android-infinix
+         PRODUCT_BUILD_PROP_OVERRIDES += \
+         PRIVATE_BUILD_DESC="vnd_x663_h6915-user 12 SP1A.210812.016 192085 release-keys"
+         BUILD_FINGERPRINT := Infinix/X663-GL/Infinix-X663:12/SP1A.210812.016/221216V284:user/release-keys
+         PRODUCT_PACKAGES += \
+           toybox \
+           strace
+        EOF
+          echo "omni_X663.mk recreated successfully"
+          echo "File verification:"
+          wc -l omni_X663.mk
+          echo "First 5 lines:"
+          head -5 omni_X663.mk
+
          rm -rf out
     
          set +e
