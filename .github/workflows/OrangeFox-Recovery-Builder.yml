@@ -138,6 +138,41 @@ jobs:
         cat "$OMNIFILE"
         fi
         echo "================================"
+
+    - name: Fix Device Configuration
+      run: |
+       cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/${{ github.event.inputs.DEVICE_PATH }}
+       echo "=== FIXING DEVICE CONFIGURATION ==="
+
+       cat > omni_X663.mk << 'EOF'
+       PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_X663.mk
+       $(call inherit-product, device/infinix/Infinix-X663/device.mk)
+
+       PRODUCT_DEVICE := X663
+       PRODUCT_NAME := omni_X663
+       PRODUCT_BRAND := Infinix
+       PRODUCT_MODEL := Infinix X663
+       PRODUCT_MANUFACTURER := Infinix
+
+       PRODUCT_PACKAGES += \
+       toybox \
+       strace \
+       mkfs.f2fs \
+       mkfs.ntfs
+
+       PRODUCT_COPY_FILES += \
+       $(LOCAL_PATH)/recovery/root/etc/twrp.fstab:recovery/root/etc/twrp.fstab
+
+       PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+       ro.hardware=$(PRODUCT_DEVICE)
+
+       PRODUCT_SYSTEM_PROPERTIES += \
+       ro.product.device=$(PRODUCT_DEVICE)
+       EOF   
+       echo "Device configuration fixed"
+       echo "Content of omni_X663.mk:"
+       cat omni_X663.mk
+       echo "==================================="
       
     - name: Building OrangeFox
       run: |
