@@ -80,6 +80,13 @@ jobs:
       uses: pierotofy/set-swap-space@master
       with:
         swap-size-gb: 24
+
+    - name: Clear Build Cache
+      run: |
+        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_12.1
+        rm -rf out
+        rm -rf .repo/projects/device/infinix/Infinix-X663.git
+        find . -name "*X663*" -type f | head -10
       
     - name: Build Environment
       run: |
@@ -99,13 +106,6 @@ jobs:
         git clone https://gitlab.com/OrangeFox/sync.git
         cd sync
         ./orangefox_sync.sh --branch ${{ github.event.inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-
-    - name: Clear Build Cache
-      run: |
-        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_12.1
-        rm -rf out
-        rm -rf .repo/projects/device/infinix/Infinix-X663.git
-        find . -name "*X663*" -type f | head -10
 
     - name: Clone Device Tree
       run: |
