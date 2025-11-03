@@ -122,7 +122,7 @@ jobs:
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         set -e
-        ${{ steps.fox_branch.outputs.value }}
+        eval ${{ env.BUILD_CMD }}
 
     - name: Set Build Date # Output will be use in Release
       run: |
