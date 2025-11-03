@@ -1,0 +1,6 @@
+- name: Find All omni_X663.mk Files
+  run: |
+    cd ${GITHUB_WORKSPACE}/OrangeFox/fox_12.1
+    echo "=== SEARCHING FOR ALL omni_X663.mk FILES ==="
+    find . -name "omni_X663.mk" -type f
+    echo "==========================================="
