@@ -187,10 +187,10 @@ jobs:
          set -e
     
          echo "=== STARTING BUILD ==="
-         echo "Device: ${{ github.event.inputs.DEVICE_NAME }}"
+         echo "Device: X663"
          echo "Build target: ${{ github.event.inputs.BUILD_TARGET }}"
 
-         if ! lunch omni_${{ github.event.inputs.DEVICE_NAME }}-eng; then
+         if ! lunch omni_X663-eng; then
          echo "ERROR:lunch failed!"
          echo "Available lunch targets:"
          lunch
@@ -206,9 +206,9 @@ jobs:
          BUILD_STATUS=${PIPESTATUS[0]}
          if [ $BUILD_STATUS -eq 0 ]; then
          echo "BUILD SUCCESSFUL"
-         if [ -d "out/target/product/${{ github.event.inputs.DEVICE_NAME }}" ]; then
+         if [ -d "out/target/product/X663" ]; then
          echo "Build directory created successfully"
-         ls -la out/target/product/${{ github.event.inputs.DEVICE_NAME }}/
+         ls -la out/target/product/X663/
          fi
          else
          echo "BUILD FAILED with status:$BUILD_STATUS"
@@ -269,12 +269,12 @@ jobs:
     - name: Check if Recovery Exist
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-        if [ ! -d "out/target/product/${{ github.event.inputs.DEVICE_NAME }}" ]; then
+        if [ ! -d "out/target/product/X663" ]; then
         echo "ERROR: Build directory doesn't exist - build failed"
         exit 1
         fi
 
-        cd out/target/product/${{ github.event.inputs.DEVICE_NAME }}
+        cd out/target/product/X663
         echo "Searching for recovery files..."
         echo "Current directory: $(pwd)"
         echo "Files:"
