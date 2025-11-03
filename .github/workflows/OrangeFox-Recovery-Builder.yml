@@ -102,10 +102,10 @@ jobs:
 
     - name: Clear Build Cache
       run: |
-      cd ${GITHUB_WORKSPACE}/OrangeFox/fox_12.1
-      rm -rf out
-      rm -rf .repo/projects/device/infinix/Infinix-X663.git
-      find . -name "*X663*" -type f | head -10
+        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_12.1
+        rm -rf out
+        rm -rf .repo/projects/device/infinix/Infinix-X663.git
+        find . -name "*X663*" -type f | head -10
 
     - name: Clone Device Tree
       run: |
