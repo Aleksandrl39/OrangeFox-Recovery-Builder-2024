@@ -1,4 +1,4 @@
-name: OrangeFox - Build
+name: Test
 
 on:
   workflow_dispatch:
