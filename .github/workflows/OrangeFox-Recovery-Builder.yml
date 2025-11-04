@@ -80,7 +80,7 @@ jobs:
       uses: pierotofy/set-swap-space@master
       with:
         swap-size-gb: 24
-
+      
     - name: Build Environment
       run: |
         sudo apt update
@@ -114,176 +114,18 @@ jobs:
         cond: ${{ github.event.inputs.MANIFEST_BRANCH == '11.0' || github.event.inputs.MANIFEST_BRANCH == '12.1' }}
         if_true: lunch twrp_${{ github.event.inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ github.event.inputs.BUILD_TARGET }}image
         if_false: lunch omni_${{ github.event.inputs.DEVICE_NAME }}-eng && make clean && mka ${{ github.event.inputs.BUILD_TARGET }}image
-
-    - name: Verify Device Tree
-      run: |
-       cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/${{ github.event.inputs.DEVICE_PATH }}
-       echo "=== DEVICE TREE VERIFICATION ==="
-       echo "Current directory: $(pwd)"
-       echo "Device tree files:"
-       ls -la
-    
-       REQUIRED_FILES=("AndroidProducts.mk" "omni_*.mk" "device.mk" "BoardConfig.mk")
-       for file in "${REQUIRED_FILES[@]}"; do
-        if ls $file 1> /dev/null 2>&1; then
-            echo "✓ Found: $file"
-        else
-            echo "✗ MISSING: $file"
-        fi
-        done
-    
-        if ls omni_*.mk 1> /dev/null 2>&1; then
-        OMNIFILE=$(ls omni_*.mk | head -1)
-        echo "Content of $OMNIFILE:"
-        cat "$OMNIFILE"
-        fi
-        echo "================================"
-
-    - name: Fix Device Configuration
-      run: |
-       cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/${{ github.event.inputs.DEVICE_PATH }}
-       echo "=== FIXING DEVICE CONFIGURATION ==="
-
-       cat > omni_X663.mk << 'EOF'
-       PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_X663.mk
-       $(call inherit-product, device/infinix/Infinix-X663/device.mk)
-
-       PRODUCT_DEVICE := X663
-       PRODUCT_NAME := omni_X663
-       PRODUCT_BRAND := Infinix
-       PRODUCT_MODEL := Infinix X663
-       PRODUCT_MANUFACTURER := Infinix
-
-       PRODUCT_PACKAGES += \
-       toybox \
-       strace \
-       mkfs.f2fs \
-       mkfs.ntfs
-
-       PRODUCT_COPY_FILES += \
-       $(LOCAL_PATH)/recovery/root/etc/twrp.fstab:recovery/root/etc/twrp.fstab
-
-       PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
-       ro.hardware=$(PRODUCT_DEVICE)
-
-       PRODUCT_SYSTEM_PROPERTIES += \
-       ro.product.device=$(PRODUCT_DEVICE)
-       EOF   
-       echo "Device configuration fixed"
-       echo "Content of omni_X663.mk:"
-       cat omni_X663.mk
-       echo "==================================="
       
     - name: Building OrangeFox
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+        set +e
+        source build/envsetup.sh
+        export ALLOW_MISSING_DEPENDENCIES=true
+        set -e
+        ${{ steps.fox_branch.outputs.value }}
 
-        cat > omni_X663.mk << 'EOF'
-         PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_X663.mk
-         $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
-         $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
-         $(call inherit-product, vendor/orangefox/config/common.mk)
-         $(call inherit-product, device/infinix/Infinix-X663/device.mk)
-         PRODUCT_DEVICE := X663
-         PRODUCT_NAME := omni_X663
-         PRODUCT_BRAND := Infinix
-         PRODUCT_MODEL := Infinix X663
-         PRODUCT_MANUFACTURER := infinix
-         PRODUCT_GMS_CLIENTID_BASE := android-infinix
-         PRODUCT_BUILD_PROP_OVERRIDES += \
-         PRIVATE_BUILD_DESC="vnd_x663_h6915-user 12 SP1A.210812.016 192085 release-keys"
-         BUILD_FINGERPRINT := Infinix/X663-GL/Infinix-X663:12/SP1A.210812.016/221216V284:user/release-keys
-         PRODUCT_PACKAGES += \
-           toybox \
-           strace
-        EOF
-          echo "omni_X663.mk recreated successfully"
-          echo "File verification:"
-          wc -l omni_X663.mk
-          echo "First 5 lines:"
-          head -5 omni_X663.mk
-
-         rm -rf out
-    
-         set +e
-         source build/envsetup.sh
-         export ALLOW_MISSING_DEPENDENCIES=true
-         export LC_ALL=C
-         set -e
-    
-         echo "=== STARTING BUILD ==="
-         echo "Device: X663"
-         echo "Build target: ${{ github.event.inputs.BUILD_TARGET }}"
-
-         if ! lunch omni_X663-eng; then
-         echo "ERROR:lunch failed!"
-         echo "Available lunch targets:"
-         lunch
-         exit 1
-         fi
-    
-         echo "Lunch successful, starting build..."
-    
-         make clean
-
-         time mka ${{ github.event.inputs.BUILD_TARGET }}image 2>&1 | tee build.log
-    
-         BUILD_STATUS=${PIPESTATUS[0]}
-         if [ $BUILD_STATUS -eq 0 ]; then
-         echo "BUILD SUCCESSFUL"
-         if [ -d "out/target/product/X663" ]; then
-         echo "Build directory created successfully"
-         ls -la out/target/product/X663/
-         fi
-         else
-         echo "BUILD FAILED with status:$BUILD_STATUS"
-         echo "Last 50 lines of build log:"
-         tail -50 build.log
-         exit $BUILD_STATUS
-         fi
-
-        - name: Check Build Status
-          run: |
-         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-         echo "=== BUILD STATUS CHECK ==="
-
-         if [ -d "out" ]; then
-        echo "Out directory exists"
-        echo "Out directory structure:"
-        find out/ -type d -name "*X663*" 2>/dev/null | head -10 || echo "No X663 directories found"
-        echo "All out directories:"
-        find out/ -maxdepth 3 -type d 2>/dev/null | head -20
-        else
-        echo "ERROR: No out directory at all - build completely failed"
-        fi
-    
-        if [ -f "build.log" ]; then
-        echo "Build log exists, last 100 lines:"
-        tail -100 build.log
-        else
-        echo "No build.log found"
-        fi
-        echo "=========================="
-
-        - name: Check Error Logs
-          run: |
-          cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          echo "=== ERROR LOGS ==="
-
-          find . -name "*.log" -type f | xargs grep -l "error:\|ERROR:\|failed\|FAILED" 2>/dev/null | head -5 | while read logfile; do
-        echo "Error found in: $logfile"
-        tail -20 "$logfile"
-        echo "---"
-        done || echo "No error logs found"
-
-        if [ -d "out" ]; then
-        echo "Recent log files in out:"
-        find out/ -name "*.log" -type f -mmin -60 2>/dev/null | head -5
-        fi
-        echo "=================="
-        
-        - name: Set Build Date # Output will be use in Release
-          run: |
+    - name: Set Build Date # Output will be use in Release
+      run: |
         echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
         DEVICE_TREE_URL="${{ github.event.inputs.DEVICE_TREE }}"
         if [[ "${DEVICE_TREE_URL}" == *.git ]]; then
@@ -294,40 +136,17 @@ jobs:
     - name: Check if Recovery Exist
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-        if [ ! -d "out/target/product/X663" ]; then
-        echo "ERROR: Build directory doesn't exist - build failed"
-        exit 1
-        fi
-
-        cd out/target/product/X663
-        echo "Searching for recovery files..."
-        echo "Current directory: $(pwd)"
-        echo "Files:"
-        ls -la
-        if ls OrangeFox*.img 1> /dev/null 2>&1; then
-        ORANGEFOX_FILE=$(ls OrangeFox*.img | head -1)
-        echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-        echo "FILE_PATH=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}" >> $GITHUB_ENV
-        echo "MD5_IMG=$(md5sum "$ORANGEFOX_FILE" | cut -d ' ' -f 1)" >> $GITHUB_ENV
-        echo "ORIGINAL_FILE=$ORANGEFOX_FILE" >> $GITHUB_ENV
-        echo "Found: $ORANGEFOX_FILE"
-        elif [ -f "recovery.img" ]; then
-        echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-        echo "FILE_PATH=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}" >> $GITHUB_ENV
-        echo "MD5_IMG=$(md5sum recovery.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
-        echo "ORIGINAL_FILE=recovery.img" >> $GITHUB_ENV
-        echo "Found: recovery.img"
-        elif [ -f "boot.img" ]; then
-        echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-        echo "FILE_PATH=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}" >> $GITHUB_ENV
-        echo "MD5_IMG=$(md5sum boot.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
-        echo "ORIGINAL_FILE=boot.img" >> $GITHUB_ENV
-        echo "Found: boot.img"
+        if [ -f out/target/product/${{ github.event.inputs.DEVICE_NAME }}/OrangeFox*.img ]; then
+            echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
+            echo "FILE_PATH=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum out/target/product/${{ github.event.inputs.DEVICE_NAME }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
+        elif [ -f out/target/product/${{ github.event.inputs.DEVICE_NAME }}/target/product/${{ github.event.inputs.DEVICE_NAME }}/OrangeFox*.img ]; then
+            echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
+            echo "FILE_PATH=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/target/product/${{ github.event.inputs.DEVICE_NAME }}" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum out/target/product/${{ github.event.inputs.DEVICE_NAME }}/target/product/${{ github.event.inputs.DEVICE_NAME }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
-        echo "ERROR: No recovery image files found!"
-        echo "Available image files:"
-        find . -name "*.img" -type f | head -10
-        exit 1
+            echo "Recovery out directory is empty."
+            cd Exit
         fi
 
     - name: Rename the Recovery
